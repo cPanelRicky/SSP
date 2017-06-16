@@ -807,14 +807,14 @@ sub get_httpd_path {
     if ( !$EA4 && -x '/usr/local/apache/bin/httpd' ) {
         return '/usr/local/apache/bin/httpd';
     }
-    return undef;
+    return 0;
 }
 
 sub is_ea4 {
     if ( -f '/etc/cpanel/ea4/is_ea4' ) {
         return 1;
     }
-    return undef;
+    return 0;
 }
 
 sub is_kernelcare {
@@ -969,7 +969,7 @@ sub timed_run_trap_stderr {    # Borrowed from Cpanel::SafeRun::Timed and modifi
         else {
             warn 'Error while executing: [' . join( ' ', @PROGA ) . ']: ' . $!;
             alarm(0);
-            open( STDERR, '>&=' . fileno($save_stderr_fh) );
+            open( STDERR, '>&=', fileno($save_stderr_fh) );
             return "";
         }
         $complete = 1;
@@ -981,7 +981,7 @@ sub timed_run_trap_stderr {    # Borrowed from Cpanel::SafeRun::Timed and modifi
         sleep(2);            # Give the process a chance to die 'nicely'
         kill( 9, $pid );     #KILL
     }
-    open( STDERR, '>&=' . fileno($save_stderr_fh) );
+    open( STDERR, '>&=', fileno($save_stderr_fh) );
     return $output;
 }
 
@@ -4566,8 +4566,9 @@ sub check_yum_conf {
     my $exclude_line_count      = 0;
     my $exclude_kernel          = 0;
     my $exclude_wget            = 0;
+    my $exclude_perl            = 0;
     my $distroverpkg_cloudlinux = 0;
-
+    
     if ( !-e $yum_conf ) {
         print_warn('YUM: ');
         print_warning( $yum_conf . ' is missing!' );
@@ -4587,6 +4588,9 @@ sub check_yum_conf {
             }
             if (/^\s*exclude.*wget/) {
                 $exclude_wget = 1;
+            }
+            if (/*\s*exclude.*perl/) {
+                $exclude_perl* = 1;
             }
             if (/^\s*distroverpkg=cloudlinux-release/) {
                 $distroverpkg_cloudlinux = 1;
@@ -4608,6 +4612,11 @@ sub check_yum_conf {
     if ($exclude_wget) {
         print_warn('YUM: ');
         print_warning('yum.conf may be excluding wget updates!');
+    }
+
+    if ($exclude_perl) {
+        print_warn('YUM: ');
+        print_warning('yum.conf may be excluding perl updates!');
     }
 
     if ($distroverpkg_cloudlinux) {
@@ -8292,6 +8301,7 @@ sub check_for_multilevel_reseller {
 
         }
     }
+    return;
 }
 
 sub check_for_cpremote {
@@ -9120,7 +9130,7 @@ sub get_external_ip {
             return $ip;
         }
     }
-    return undef;
+    return 0;
 }
 
 sub print_bug_report {
